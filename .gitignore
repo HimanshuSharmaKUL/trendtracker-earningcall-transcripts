@@ -1,0 +1,6 @@
+trendT_3.12.3/
+.env.secret
+*.ipynb
+__pycache__/
+rough*
+
