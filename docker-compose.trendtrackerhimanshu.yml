@@ -1,0 +1,40 @@
+name: trendtracker_himanshu
+services:
+  postgres:
+    image: pgvector/pgvector:pg17 #postgres:17
+    container_name: trendtracker-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres      # dev-only
+      POSTGRES_PASSWORD: postgres   # dev-only
+      POSTGRES_DB: trendtracker_db
+    ports:
+      - "5433:5432" # local port 5433 'cause I had a local pgsql running'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: trendtracker-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+  # backend:
+  #   build: ./backend
+  #   env_file:
+  #     - .env.secret
+  #   depends_on: [db, ollama]
+  #   ports: ["8000:8000"]
+
+  # frontend:
+  #   build: ./frontend
+  #   ports: ["4200:80"]
+
+volumes:
+  postgres_data:
