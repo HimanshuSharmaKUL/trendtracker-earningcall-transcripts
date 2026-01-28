@@ -1,0 +1,17 @@
+name: trendtracker_himanshu_test
+services:
+  postgres_test:
+    image: pgvector/pgvector:pg17
+    container_name: trendtracker-himanshu-test
+    restart: always
+    environment:
+      POSTGRES_USER: postgres_test
+      POSTGRES_PASSWORD: postgrestest_pw
+      POSTGRES_DB: trendtracker_db_test
+    ports:
+      - "5434:5432" # local port 5434 for test, 5433 for dev, 5432 previous local installation
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_test_data:
