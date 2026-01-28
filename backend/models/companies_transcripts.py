@@ -79,12 +79,6 @@ class TranscriptChunk(Base):
     chunk_id = Column(UUID(as_uuid=True), nullable=False)
     chunk_hash = Column(Text, nullable=False)
     chunk_index = Column(Integer, nullable=False)
-    # start_char = Column(Integer, nullable=False)
-    # end_char = Column(Integer, nullable=False)
-
-    # chunk_text = Column(Text, nullable=False)
-    # said_by = Column(Text, nullable=False) #speaker of the chunk
-    # paragraph_num = Column(Integer, nullable=False)
     embedding = Column(Vector(384), nullable=True)  #must match with RAG_EMB_DIM
     embedding_model = Column(Text, nullable=False)
     updated_at = Column(DateTime(timezone=True))

@@ -3,4 +3,7 @@ trendT_3.12.3/
 *.ipynb
 __pycache__/
 rough*
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
 
