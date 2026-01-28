@@ -1,0 +1,50 @@
+<div class="page">
+  <header class="hero detail-hero">
+    <div class="hero-copy">
+      <span class="pill">Explore Transcript</span>
+      <h1>Transcript Detail</h1>
+      <p>Here we can view the full transcript and organization frequency data</p>
+    </div>
+    <div class="hero-actions">
+      <a class="action secondary" routerLink="/">Back to console</a>
+    </div>
+  </header>
+
+  <section class="grid">
+    <div class="card">
+      <div class="card-body detail-body">
+        <div class="feedback error" *ngIf="viewError">{{ viewError }}</div>
+        <div class="muted" *ngIf="viewLoading">Loading transcript...</div>
+
+        <div class="detail-content" *ngIf="viewResult">
+          <div class="card-head">
+        <h2>Transcript Detail for {{ viewResult.company_name }} for FY{{ viewResult.fiscal_year }} / Q{{ viewResult.fiscal_quarter }}</h2>
+          </div>
+
+          <div class="detail-grid">
+            <div class="detail-pane">
+              <div class="pane-head">
+                Organizations ({{ viewResult.org_data.org_unique_count }})
+              </div>
+              <div class="pane-scroll">
+                <table class="org-table">
+                  <tr *ngFor="let org of viewResult.org_data.org_freq">
+                    <td>{{ org.name }}</td>
+                    <td>{{ org.count }}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+
+            <div class="detail-pane">
+              <div class="pane-head">Transcript Text</div>
+              <div class="pane-scroll transcript-scroll">
+                <pre class="transcript">{{ viewResult.transcript_text }}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

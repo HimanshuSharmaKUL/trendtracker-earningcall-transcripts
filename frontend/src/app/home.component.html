@@ -1,0 +1,395 @@
+<div class="page">
+  <header class="hero">
+    <div class="hero-copy">
+      <span class="pill">Earnings Call Intelligence</span>
+      <h1>TrendTracker Coding Assignment</h1>
+      <h3>by Himanshu Sharma</h3>
+      <p>
+        Ingest transcripts, search highlights, and ask natural questions.
+      </p>
+    </div>
+  </header>
+
+  <section class="grid">
+    <div class="card">
+      <div class="card-head">
+        <h2>Ingest</h2>
+        <p>Pull a transcript into the database with a single request</p>
+      </div>
+      <div class="card-body">
+        <form class="form" (ngSubmit)="runIngest()" #ingestForm="ngForm">
+          <label class="field">
+            <span class="field-label">Company name query</span>
+            <input
+              class="field-input"
+              name="ingestCompany"
+              type="text"
+              [(ngModel)]="ingest.company_name_query"
+              placeholder="Apple, Microsoft, Nvidia"
+              required
+            />
+          </label>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">Security type</span>
+              <input
+                class="field-input"
+                name="ingestSecurity"
+                type="text"
+                [(ngModel)]="ingest.security_type"
+              />
+            </label>
+            <label class="field">
+              <span class="field-label">Exchange code</span>
+              <input
+                class="field-input"
+                name="ingestExchange"
+                type="text"
+                [(ngModel)]="ingest.exchange_code"
+              />
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">Fiscal year</span>
+              <input
+                class="field-input"
+                name="ingestYear"
+                type="number"
+                [(ngModel)]="ingest.year"
+                min="2006"
+                max="2026"
+              />
+            </label>
+            <label class="field">
+              <span class="field-label">Quarter</span>
+              <select class="field-input" name="ingestQuarter" [(ngModel)]="ingest.quarter">
+                <option [ngValue]="1">Q1</option>
+                <option [ngValue]="2">Q2</option>
+                <option [ngValue]="3">Q3</option>
+                <option [ngValue]="4">Q4</option>
+              </select>
+            </label>
+          </div>
+
+          <button class="action" type="submit" [disabled]="ingestLoading">
+            {{ ingestLoading ? "Ingesting..." : "Ingest transcript" }}
+          </button>
+        </form>
+
+        <div class="card-output">
+          <div class="feedback error" *ngIf="ingestError">{{ ingestError }}</div>
+
+          <div class="result" *ngIf="ingestResult">
+            <h3>Ingestion Successful: Summary of Ingestion Operation</h3>
+            <div class="keyval">
+              <span>Company</span>
+              <strong>{{ ingestResult.company_name }} ({{ ingestResult.ticker }})</strong>
+            </div>
+            <div class="keyval">
+              <span>Company ID</span>
+              <strong>{{ ingestResult.company_id }}</strong>
+            </div>
+            <div class="keyval">
+              <span>Transcript</span>
+              <strong>{{ ingestResult.transcript_id }}</strong>
+            </div>
+            <div class="keyval">
+              <span>Fiscal period</span>
+              <strong>FY{{ ingestResult.fiscal_year }} / Q{{ ingestResult.fiscal_quarter }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>List Transcripts</h2>
+        <p>Fetch all stored transcripts for a company.</p>
+      </div>
+      <div class="card-body">
+        <form class="form" (ngSubmit)="runListTranscripts()" #listForm="ngForm">
+          <label class="field">
+            <span class="field-label">Company name query</span>
+            <input
+              class="field-input"
+              name="listCompany"
+              type="text"
+              [(ngModel)]="listTranscripts.company_name_query"
+              required
+            />
+          </label>
+
+          <button class="action" type="submit" [disabled]="listLoading">
+            {{ listLoading ? "Loading..." : "List transcripts" }}
+          </button>
+        </form>
+
+        <div class="card-output">
+          <div class="feedback error" *ngIf="listError">{{ listError }}</div>
+
+          <div class="result" *ngIf="listResult">
+            <h3>{{ listResult.company_name }} transcripts</h3>
+            <div class="hit" *ngFor="let t of listResult.company_transcripts">
+              <div class="hit-meta">
+                <span>Fiscal</span>
+                <strong>FY{{ t.fiscal_year }} / Q{{ t.fiscal_quarter }}</strong>
+              </div>
+              <div class="hit-meta">
+                <span>ID</span>
+                <strong>{{ t.transcript_id }}</strong>
+              </div>
+              <button class="action" type="button" (click)="openTranscript(t.transcript_id)">
+                View transcript
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Search -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Search</h2>
+        <p>Run full-text search and get ranked highlights with snippets.</p>
+      </div>
+      <div class="card-body">
+        <form class="form" (ngSubmit)="runSearch()" #searchForm="ngForm">
+          <label class="field">
+            <span class="field-label">Query</span>
+            <input
+              class="field-input"
+              name="searchQuery"
+              type="text"
+              [(ngModel)]="search.query"
+              placeholder="pricing power, demand, forward guidance"
+              required
+            />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Company ID (optional)</span>
+            <input
+              class="field-input"
+              name="searchCompanyId"
+              type="text"
+              [(ngModel)]="search.company_id"
+              placeholder="UUID"
+            />
+          </label>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">Fiscal year</span>
+              <input
+                class="field-input"
+                name="searchYear"
+                type="number"
+                [(ngModel)]="search.fiscal_year"
+                placeholder="2024"
+              />
+            </label>
+            <label class="field">
+              <span class="field-label">Quarter</span>
+              <select class="field-input" name="searchQuarter" [(ngModel)]="search.fiscal_quarter">
+                <option [ngValue]="1">Q1</option>
+                <option [ngValue]="2">Q2</option>
+                <option [ngValue]="3">Q3</option>
+                <option [ngValue]="4">Q4</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">Limit</span>
+              <input
+                class="field-input"
+                name="searchLimit"
+                type="number"
+                [(ngModel)]="search.limit"
+                min="1"
+                max="50"
+              />
+            </label>
+            <label class="field">
+              <span class="field-label">Offset</span>
+              <input
+                class="field-input"
+                name="searchOffset"
+                type="number"
+                [(ngModel)]="search.offset"
+                min="0"
+              />
+            </label>
+          </div>
+
+          <button class="action" type="submit" [disabled]="searchLoading">
+            {{ searchLoading ? "Searching..." : "Search transcripts" }}
+          </button>
+        </form>
+
+        <div class="card-output">
+          <div class="feedback error" *ngIf="searchError">{{ searchError }}</div>
+
+          <div class="result" *ngIf="searchResult">
+            <div class="result-head">
+              <h3>{{ searchResult.total }} hits</h3>
+              <span class="muted">Sorted by rank</span>
+            </div>
+            <div class="hit" *ngFor="let hit of searchResult.hits">
+              <div class="hit-meta">
+                <span>Transcript</span>
+                <strong>{{ shortId(hit.transcript_id) }}</strong>
+              </div>
+              <div class="hit-meta">
+                <span>Company</span>
+                <strong>{{ shortId(hit.company_id) }}</strong>
+              </div>
+              <div class="hit-meta">
+                <span>Rank</span>
+                <strong>{{ hit.rank | number : "1.2-2" }}</strong>
+              </div>
+              <div class="hit-meta">
+                <span>Fiscal</span>
+                <strong>FY{{ hit.fiscal_year }} / Q{{ hit.fiscal_quarter }}</strong>
+              </div>
+              <div class="hit-snippets">
+                <div
+                  class="snippet"
+                  *ngFor="let fragment of snippetFragments(hit.snippet)"
+                  [innerHTML]="fragment"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Q&amp;A</h2>
+        <p>Ask questions and recieve answers grounded in transcripts</p>
+      </div>
+      <div class="card-body">
+        <form class="form" (ngSubmit)="runQna()" #qnaForm="ngForm">
+          <label class="field">
+            <span class="field-label">Question</span>
+            <textarea
+              class="field-input"
+              name="qnaQuestion"
+              rows="4"
+              [(ngModel)]="qna.question"
+              placeholder="What did management say about gross margin outlook?"
+              required
+            ></textarea>
+          </label>
+
+          <div class="panel">
+            <div class="panel-note">Company details are required for Q&amp;A.</div>
+            <label class="field">
+              <span class="field-label">Company name query</span>
+              <input
+                class="field-input"
+                name="qnaCompanyName"
+                type="text"
+                [(ngModel)]="qnaCompany.company_name_query"
+              />
+            </label>
+            <!-- <div class="field-row">
+              <label class="field">
+                <span class="field-label">Security type</span>
+                <input
+                  class="field-input"
+                  name="qnaSecurity"
+                  type="text"
+                  [(ngModel)]="qnaCompany.security_type"
+                />
+              </label>
+              <label class="field">
+                <span class="field-label">Exchange code</span>
+                <input
+                  class="field-input"
+                  name="qnaExchange"
+                  type="text"
+                  [(ngModel)]="qnaCompany.exchange_code"
+                />
+              </label>
+            </div> -->
+            <div class="field-row">
+              <label class="field">
+                <span class="field-label">Fiscal year</span>
+                <input
+                  class="field-input"
+                  name="qnaYear"
+                  type="number"
+                  [(ngModel)]="qnaCompany.year"
+                  placeholder="2024"
+                />
+              </label>
+              <label class="field">
+              <span class="field-label">Quarter</span>
+              <select class="field-input" name="qnaQuarter" [(ngModel)]="qnaCompany.quarter">
+                <option [ngValue]="1">Q1</option>
+                <option [ngValue]="2">Q2</option>
+                <option [ngValue]="3">Q3</option>
+                <option [ngValue]="4">Q4</option>
+              </select>
+            </label>
+              <!-- <label class="field">
+                <span class="field-label">Quarter</span>
+                <input
+                  class="field-input"
+                  name="qnaQuarter"
+                  type="number"
+                  [(ngModel)]="qnaCompany.quarter"
+                  placeholder="1-4"
+                  min="1"
+                  max="4"
+                />
+              </label> -->
+            </div>
+          </div>
+
+          <button class="action" type="submit" [disabled]="qnaLoading">
+            {{ qnaLoading ? "Thinking..." : "Ask question" }}
+          </button>
+        </form>
+
+        <div class="card-output">
+          <div class="feedback error" *ngIf="qnaError">{{ qnaError }}</div>
+
+          <div class="result" *ngIf="qnaResult">
+            <h3>Answer</h3>
+            <p class="answer" [innerHTML]="formatAnswer(qnaResult.answer)"></p>
+            <h3>Sources</h3>
+            <div class="source" *ngFor="let source of qnaResult.sources">
+              <div class="source-meta">
+                <span>Transcript</span>
+                <strong>{{ shortId(source.transcript_id) }}</strong>
+              </div>
+              <div class="source-meta">
+                <span>Chunk</span>
+                <strong [attr.title]="source.chunk_id">{{ shortId(source.chunk_id) }}</strong>
+              </div>
+              <div class="source-meta">
+                <span>Score</span>
+                <strong>{{ source.score | number : "1.2-2" }}</strong>
+              </div>
+              <div class="source-meta">
+                <span>Speaker</span>
+                <strong>{{ source.speaker || "Unknown" }}</strong>
+              </div>
+              <div class="snippet" [innerHTML]="source.snippet"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

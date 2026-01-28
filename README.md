@@ -2,56 +2,77 @@
 
 Financial transcript ingestion, search, and RAG-based Q&A built on FastAPI, PostgreSQL (FTS + pgvector), and a simple Angular UI.
 
-### Backend: Transcript Data Source & Ingestion Approach
+## Engineering Choices:
+
+1. Use of transformer based spaCy model `en_core_web_trf`
+
+- It is a heavy model which is expensive to load but it gives good Named-Entity Recognition
+- To manage it's expensive loading, I only load it locally when preprocessing of transcripts are being done and not globally.
+
+2. Uniqueness of the chunks
+
+- Avoiding chunk duplication was challanging.
+- There were some common chunks like 'Thank you for the call...', or 'Thank you for being present..' etc. which usually came in the first position of the paragraph chunks and were genrating UUID conflict. So to manage it I adopted several deduplication tricks:
+- I made a globally unique chunk hash using its parent transcript_id, its local index and its text,
+- I used Upserting - where I checked if the row exists for a given unique combination of `transcript_id` and `chunk_id` in the TranscriptChunk table.
+- Then I also did deduplication of the chunks and tried to fill only the unseen chunks.
+
+3. Using 4-bit quantised model`gemma3:4b-it-q4_K_M`:
+
+- To generate augmented answers locally on my laptop, I used a light weight but accurate 4-bit quantised version of gemma3:4b, which which significantly reduces the VRAM requirement in GPU.
+
+4. To send less UUIDs in backend response because frontend can not do anything with it apart from making another backend calls
+
+## Explainations and Descriptions
+
+### Transcript Data Source & Ingestion Approach
 
 - User provides data in the `IngestRequest` format which is a free form company query, year, quarter, security type, exchange code (US, UK etc.)
 - Company resolution: This free-form company input is resolved to a ticker using **OpenFIGI** API.
 - Transcript is sourced: Then **DefeatBeta API** retrieves earnings-call transcripts. It sources from database hosted on huggingface https://huggingface.co/datasets/bwzheng2010/yahoo-finance-data
 - **Preprocessing**:
-  - Concatenates transcript paragraphs into `raw_text`.
-  - Extracts ORG entities via spaCy (see NLP section).
-  - Computes metadata (char/word/sentence counts) and a SHA-256 `content_hash`.
+  - I construct of raw text from the ingested transcripts
+  - Then ORG named-entities are extracted via spaCy (see NLP section).
+  - Then some metadata (char/word/sentence counts) and a SHA-256 `content_hash` is computed.
 - **Persistence**:
-  - Creates or reuses a company record.
-  - Inserts transcript into `transcripts` table.
-  - Inserts per-ORG counts into `orgs_in_transcripts`.
-  - Unique constraints prevent duplicate transcripts by company/period and content hash.
+  - Here, just before persisting transcript record, I create or reuse a company record.
+  - Then I insert transcript into `transcripts` table.
+  - It then inserts per-ORG counts into `orgs_in_transcripts`.
+  - Unique constraints on the `EarningCallTranscript` table to prevent duplicate transcripts by company/period and content hash.
 
-### Backend: NLP Approach for Organization Extraction
+### NLP Approach for Organization Extraction
 
-- Uses spaCy model defined by `SPACY_MODEL` (default in `.env.example` is `en_core_web_trf`).
-- Extracts `ORG` entities from the full transcript text.
-- Normalizes org names (lowercase, trimmed) and counts mentions.
-- Stores:
-  - `org_data` summary (unique count + frequency list).
+- I use spaCy model defined by `SPACY_MODEL` (I use `.env.example` is `en_core_web_trf`).
+- It extracts named `ORG` entities from the full transcript text.
+- It normalizes the org names (lowercase, trimmed) and counts their mentions.
+- Then it is Stored:
+  - Data about extracted organisations - `org_data` summary (unique count + frequency list).
   - Raw org counts into `orgs_in_transcripts` for queryability.
 
 ### Full-Text Search Implementation
 
-- PostgreSQL computed column: `raw_text_fts` = `to_tsvector('english', raw_text)`.
-- GIN index on `raw_text_fts` for fast query execution.
+- There is a PostgreSQL computed column in the `EarningCallTranscript` table: `raw_text_fts` which is computed from `to_tsvector('english', raw_text)` by postgres itself.
+- I use GIN index on `raw_text_fts` for fast query execution.
 - Query path:
   - Uses `websearch_to_tsquery` for Google-like syntax.
-  - Ranks results with `ts_rank_cd`.
-  - Generates highlighted snippets with `ts_headline`.
+  - It tries to rank results with `ts_rank_cd`.
+  - Then it generates highlighted snippets contained in the raw text with `ts_headline`.
 - Filters supported: `company_id`, `fiscal_year`, `fiscal_quarter`, plus pagination.
 
 ### RAG Approach & Grounding Strategy
 
-- **Chunking**: There are two options to choose from:
+- For Chunking, tThere are two options to choose from:
   - `paragraph`: splits by paragraph and chunks to a max size controlled by environment variable `CHUNK_SIZE`
   - `semantic`: sentence-level similarity chunking with threshold also controlled by env variable `SEMENTIC_THRESH`
-- **Embeddings**: The chunks converted into embeddings using SentenceTransformer model `EMBEDDING_MODEL`, default 384-dim and stored in pgvector enabled PostgreSQL in the column called `transcript_chunks.embedding`.
-- **Retrieval**: THen while retrieving, I retrieve the top K vectors (also an environment variable)
+- Then for Embeddings, the chunks converted into embeddings using SentenceTransformer model `EMBEDDING_MODEL`, default 384-dim and stored in pgvector enabled PostgreSQL in the column called `transcript_chunks.embedding`.
+- THen while Retrieving, I retrieve the top K vectors (also an environment variable)
   - I calculate cosine distance between the query and the stored chunk embeddings.
   - There is also aptional hybrid filter using full tesxt search of PostgreSQL, this uses `USE_HYBRID_FTS` and `FTS_CANDIDATE_LIMIT` variables.
-- **Grounding**:
+- Grounding in transcripts:
   - The system prompt is augmented with top-k chunks (bounded by `MAX_CONTEXT_CHARS`) along with chunk meta data like who was the speaker, which paragraph does it belong to etc.
   - Answer includes citations in `[chunk_id=...]` format which are highlighted on the frontend.
   - If no strong evidence, responds: **"Not enough evidence in the transcripts to answer."** This usually happens when the minimum score to match the query with the chunks is very high (controlled by `MIN_SCORE` variable). I have observed this threshold should not be too high. A value above 0.4, 0.45 gives good results.
 - **LLM Provider**: We can choose `openai` or `ollama` chosen via `LLM_PROVIDER`. OpenAI required `OPENAI_API_KEY` and we can choose our model. I ran this in my local system using Ollama and I used `gemma3:4b-it-q4_K_M` which is 4-bit quantised version of gemma3:4b, which which significantly reduces the VRAM requirement in GPU.
-
----
 
 ## API Endpoints
 
