@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     TOP_K: int
     MIN_SCORE: float
     MAX_CONTEXT_CHARS: int
+    CHUNK_SIZE: int
+    SEMENTIC_THRESH: float
 
     REQUEST_TIMEOUT_SEC: int
     LLM_PROVIDER: str
