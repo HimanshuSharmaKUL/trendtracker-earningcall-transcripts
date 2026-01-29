@@ -95,12 +95,7 @@ def test_duplicate_transcript_conflict(test_session, mock_transcript):
     )
 
     with pytest.raises(HTTPException) as exc:
-        persist_transcripts(
-            test_session,
-            company_id=mock_transcript.company_id,
-            transcript_payload=payload,
-            org_counts=Counter(),
-        )
+        persist_transcripts(test_session, company_id=mock_transcript.company_id, transcript_payload=payload, org_counts=Counter())
 
     assert exc.value.status_code == status.HTTP_409_CONFLICT
     assert "Transcript already exists" in exc.value.detail
