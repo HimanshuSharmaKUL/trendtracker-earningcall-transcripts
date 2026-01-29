@@ -1,26 +1,26 @@
 # TrendTracker Coding Assignment: Earnings Call Transcripts RAG based Q&A
 
-This repo is my submition towards TrendTracker coding assignment where my task was to make a web app for financial transcript ingestion, search, and RAG-based Q&A using FastAPI, PostgreSQL, and a simple Angular UI. - Himanshu Sharma
+This repo is my submition towards TrendTracker coding assignment where my task was to make a web app for financial transcript ingestion, search them, and RAG-based Q&A with the stored transcripts. I implemented the web-app using FastAPI, PostgreSQL, and a simple Angular UI frontend. - Himanshu Sharma
 
 ## Engineering Choices:
-
-1. Use of transformer based spaCy model `en_core_web_trf` for NLP preprocessing
+I made some engineering choices which involved tradeoffs between speed, accuracy or between ease of implementation and important but complex to implement
+1. I used transformer based spaCy model `en_core_web_trf` for NLP preprocessing
     - It is a heavy model which is expensive to load but it gives good Named-Entity Recognition
     - To manage its expensive loading, I only load it locally when preprocessing of transcripts is being done and not globally.
 
-2. Uniqueness of the chunks
+2. I ensured uniqueness of the chunks
 
     - Avoiding chunk duplication was challanging.
-    - There were some common chunks like 'Thank you for the call...', or 'Thank you for being present..' etc. which usually came in the first position of the paragraph chunks and were genrating UUID conflict. So to manage it I adopted several deduplication tricks:
+    - There were some common chunks like 'Thank you for the call...', or 'Thank you for being present..' etc. which usually came in the first position of the paragraph chunks and were genrating UUID conflict. So to manage it, I adopted several deduplication tricks:
         - I made a globally unique chunk hash using its parent transcript_id, its local index and its text,
         - I used Upserting - where I checked if the row exists for a given unique combination of `transcript_id` and `chunk_id` in the TranscriptChunk table.
         - Then I also did deduplication of the chunks and tried to fill only the unseen chunks.
 
-3. Using 4-bit quantised model`gemma3:4b-it-q4_K_M`:
+3. I'm using 4-bit quantised model`gemma3:4b-it-q4_K_M`:
 
       - To generate augmented answers locally on my laptop, I used a light weight but accurate 4-bit quantised version of gemma3:4b, which which significantly reduces the VRAM requirement in GPU.
 
-4. Trying to send less UUIDs to frontend in backend responsees because frontend can not do anything with them apart from making another backend calls
+4. I'm trying to send less UUIDs to frontend from backend responsees because frontend can not do anything with them apart from making another backend calls
 
 ## Explanations and Descriptions
 
