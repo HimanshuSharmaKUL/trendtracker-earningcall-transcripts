@@ -119,12 +119,8 @@ We must set:
 
 - Python version: **3.12.3** (from `.python-version`)
 - Install dependencies: `pip install requirements.txt`
-  - Key libs: `fastapi`, `uvicorn`, `sqlalchemy`, `psycopg2`, `pgvector`,
-    `defeatbeta_api`, `spacy`, `sentence-transformers`, `scikit-learn`, `pandas`, `numpy`
-- Download the spaCy model:
-  ```
-  python -m spacy download en_core_web_trf
-  ```
+- Download the spaCy model: `python -m spacy download en_core_web_trf`
+- Run Docker container
 - Run API:
   ```
   python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000

@@ -8,6 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
 from backend.RequestSchemas.qa import RAGRequest
+from backend.RequestSchemas.qa import IngestRequest #IngestRequest from qa not ingest
 from backend.config.config import get_settings
 from backend.models.companies_transcripts import EarningCallTranscript
 from backend.services.InternalSchemas.chunk import Chunk
@@ -16,17 +17,17 @@ from backend.services.ticker_from_company import resolve_company_to_ticker
 
 settings = get_settings()
 
-def _fetch_transcripts(ask: RAGRequest, session: Session) -> List[EarningCallTranscript]:
-    resolved = resolve_company_to_ticker(ask.company) #resolver takes input type IngestRequest
+def _fetch_transcripts(ask: IngestRequest, session: Session) -> List[EarningCallTranscript]:
+    resolved = resolve_company_to_ticker(ask) #resolver takes input type IngestRequest
     company = create_get_company(resolved, session)
 
     q = session.query(EarningCallTranscript)
     if company:
         q = q.filter(EarningCallTranscript.company_id == company.id)
-    if ask.company.year:
-        q = q.filter(EarningCallTranscript.fiscal_year == ask.company.year)
-    if ask.company.quarter:
-        q = q.filter(EarningCallTranscript.fiscal_quarter == ask.company.quarter)
+    if ask.year:
+        q = q.filter(EarningCallTranscript.fiscal_year == ask.year)
+    if ask.quarter:
+        q = q.filter(EarningCallTranscript.fiscal_quarter == ask.quarter)
     return q.all()
 
 # def paragraph_chunking(transcript: EarningCallTranscript) -> List[Chunk]:
@@ -138,7 +139,7 @@ def semantic_chunk(transcript: EarningCallTranscript, similarity_threshold: floa
                     "chunk_text": chunk}))
     return all_chunks
 
-def build_chunks(ask: RAGRequest, session: Session) -> List[Chunk]:
+def build_chunks(ask: IngestRequest, session: Session) -> List[Chunk]:
     transcripts = _fetch_transcripts(ask, session)
     
     all_chunks: List[Chunk] = []

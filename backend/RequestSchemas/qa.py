@@ -4,12 +4,12 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 class IngestRequest(BaseModel):
-    company_name_query: str = Optional[Field(min_length=1)] | None
-    security_type: str = Field(default="Common Stock")
-    exchange_code: str = Field(default="US")
-    year: int = Optional[Field(ge=2006, le=2026)] | None 
-    quarter: int = Optional[Field(ge=1, le=4)] | None 
+    company_name_query: Optional[str] = [Field(min_length=1, default=None)]  
+    security_type: Optional[str] = Field(default="Common Stock")
+    exchange_code: Optional[str] = Field(default="US")
+    year: Optional[int] =  Field(ge=2006, le=2026, default=None) 
+    quarter: Optional[int] = Field(ge=1, le=4, default=None) 
 
 class RAGRequest(BaseModel):
     question: str
-    company : Optional[IngestRequest] | None = None
+    company : Optional[IngestRequest] = None
