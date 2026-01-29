@@ -114,6 +114,8 @@ We must set:
 
 - `OPENFIGI_API_KEY` for ticker resolution. This API Key is free to obtain. As OpenFIGI is an oopen standard unique identifier of financial instruments.
 - `LLM_PROVIDER` and corresponding OpenAI and Ollama settings
+        - If you have OpenAI, then use its keys
+        - TO use Ollama, you'll need to download Ollama (https://ollama.com/download) and then select the model of your choice. I selected a small 4B model.
 - `CORS_ORIGINS` to include the frontend URL
 
 ### 3) Backend
