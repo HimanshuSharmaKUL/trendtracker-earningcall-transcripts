@@ -138,4 +138,10 @@ npm install
 npm start
 ```
 
+### 5) Run Tests
+To run tests
+- First run the test database: `docker compose -f docker-compose.test.yml up -d`
+- Run alembic migrations: `alembic upgrade head`
+- Then run from root: `pytest`
+
 We'll have frontend at `http://localhost:4200` and FastAPI backend at `http://localhost:8000`.
