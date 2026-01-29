@@ -70,7 +70,7 @@ This repo is my submition towards TrendTracker coding assignment where my task w
 - Grounding in transcripts:
   - The system prompt is augmented with top-k chunks (bounded by `MAX_CONTEXT_CHARS`) along with chunk meta data like who was the speaker, which paragraph does it belong to etc.
   - Answer includes citations in `[chunk_id=...]` format which are highlighted on the frontend.
-  - If no strong evidence, responds: **"Not enough evidence in the transcripts to answer."** This usually happens when the minimum score to match the query with the chunks is very high (controlled by `MIN_SCORE` variable). I have observed this threshold should not be too high. A value above 0.4, 0.45 gives good results.
+  - If no strong evidence, then backend responds: "Not enough evidence in the transcripts to answer." This usually happens when the minimum score to match the query with the chunks is very high (controlled by `MIN_SCORE` variable). I have observed this threshold should not be too high. A value above 0.4, 0.35 gives good results.
 - **LLM Provider**: We can choose `openai` or `ollama` chosen via `LLM_PROVIDER`. OpenAI required `OPENAI_API_KEY` and we can choose our model. I ran this in my local system using Ollama and I used `gemma3:4b-it-q4_K_M` which is 4-bit quantised version of gemma3:4b, which which significantly reduces the VRAM requirement in GPU.
 
 ## API Endpoints
