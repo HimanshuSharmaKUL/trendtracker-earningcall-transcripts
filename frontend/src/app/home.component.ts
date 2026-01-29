@@ -65,16 +65,16 @@ type SearchPayload = {
 };
 
 type QnaCompanyPayload = {
-  company_name_query: string;
-  security_type: string;
-  exchange_code: string;
+  company_name_query?: string;
+  security_type?: string;
+  exchange_code?: string;
   year?: number;
   quarter?: number;
 };
 
 type QnaPayload = {
   question: string;
-  company: QnaCompanyPayload;
+  company?: QnaCompanyPayload;
 };
 
 @Component({
@@ -263,15 +263,15 @@ export class HomeComponent {
         exchange_code: "US"
       }
     };
-    const name = this.qnaCompany.company_name_query.trim();
-    if (!name) {
-      this.qnaError = "Company name is required for Q&A in the current backend.";
-      return;
-    }
+    const name = this.qnaCompany.company_name_query?.trim();
+    // if (!name) {
+    //   this.qnaError = "Company name is required for Q&A in the current backend.";
+    //   return;
+    // }
     const companyPayload: QnaCompanyPayload = {
       company_name_query: name,
-      security_type: this.qnaCompany.security_type.trim() || "Common Stock",
-      exchange_code: this.qnaCompany.exchange_code.trim() || "US"
+      security_type: this.qnaCompany.security_type?.trim() || "Common Stock",
+      exchange_code: this.qnaCompany.exchange_code?.trim() || "US"
     };
     const year = this.toNumber(this.qnaCompany.year);
     if (year !== null) {

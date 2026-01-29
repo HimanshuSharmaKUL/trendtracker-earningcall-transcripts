@@ -291,7 +291,7 @@
           </label>
 
           <div class="panel">
-            <div class="panel-note">Company details are required for Q&amp;A.</div>
+            <div class="panel-note">Company details are optional for Q&amp;A</div>
             <label class="field">
               <span class="field-label">Company name query</span>
               <input
@@ -365,28 +365,43 @@
           <div class="feedback error" *ngIf="qnaError">{{ qnaError }}</div>
 
           <div class="result" *ngIf="qnaResult">
+            
             <h3>Answer</h3>
             <p class="answer" [innerHTML]="formatAnswer(qnaResult.answer)"></p>
-            <h3>Sources</h3>
-            <div class="source" *ngFor="let source of qnaResult.sources">
-              <div class="source-meta">
-                <span>Transcript</span>
-                <strong>{{ shortId(source.transcript_id) }}</strong>
+            
+              <h3>Sources</h3>
+            
+            <div class="sources-box">
+            <div class="sources-scroll">
+              <div class="source" *ngFor="let source of qnaResult.sources">
+                <div class="source-grid">
+                  <div class="source-meta">
+                    <span>Transcript</span>
+                    <strong>{{ shortId(source.transcript_id) }}</strong>
+                  </div>
+
+                  <div class="source-meta">
+                    <span>Chunk</span>
+                    <strong [attr.title]="source.chunk_id">{{ shortId(source.chunk_id) }}</strong>
+                  </div>
+
+                  <div class="source-meta">
+                    <span>Score</span>
+                    <strong>{{ source.score | number : "1.2-2" }}</strong>
+                  </div>
+
+                  <div class="source-meta">
+                    <span>Speaker</span>
+                    <strong>{{ source.speaker || "Unknown" }}</strong>
+                  </div>
+                </div>
+
+                <div class="snippet" [innerHTML]="source.snippet"></div>
               </div>
-              <div class="source-meta">
-                <span>Chunk</span>
-                <strong [attr.title]="source.chunk_id">{{ shortId(source.chunk_id) }}</strong>
-              </div>
-              <div class="source-meta">
-                <span>Score</span>
-                <strong>{{ source.score | number : "1.2-2" }}</strong>
-              </div>
-              <div class="source-meta">
-                <span>Speaker</span>
-                <strong>{{ source.speaker || "Unknown" }}</strong>
-              </div>
-              <div class="snippet" [innerHTML]="source.snippet"></div>
             </div>
+            </div>
+
+
           </div>
         </div>
       </div>
