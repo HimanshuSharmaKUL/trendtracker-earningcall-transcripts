@@ -1,6 +1,6 @@
 # TrendTracker Coding Assignment: Earnings Call Transcripts RAG based Q&A
 
-This repo is my submition towards TrendTracker coding assignment where my task was to make a web app for financial transcript ingestion, search, and RAG-based Q&A using FastAPI, PostgreSQL, and a simple Angular UI.
+This repo is my submition towards TrendTracker coding assignment where my task was to make a web app for financial transcript ingestion, search, and RAG-based Q&A using FastAPI, PostgreSQL, and a simple Angular UI. - Himanshu Sharma
 
 ## Engineering Choices:
 
