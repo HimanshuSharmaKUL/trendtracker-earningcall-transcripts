@@ -137,8 +137,3 @@ npm start
 ```
 
 We'll have frontend at `http://localhost:4200` and FastAPI backend at `http://localhost:8000`.
-     min score threshold, “not enough evidence” response, source formatting
-7. **API contracts (3 cases)**
-   - /ingest input validation, /search validation, /qna validation
-
-Total: **34 core backend test cases** across unit + service + API contract layers.
