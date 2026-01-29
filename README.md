@@ -1,37 +1,36 @@
-# TrendTracker: Earnings Call Transcripts RAG based Q&A
+# TrendTracker Coding Assignment: Earnings Call Transcripts RAG based Q&A
 
-Financial transcript ingestion, search, and RAG-based Q&A built on FastAPI, PostgreSQL (FTS + pgvector), and a simple Angular UI.
+This repo is my submition towards TrendTracker coding assignment where my task was to make a web app for financial transcript ingestion, search, and RAG-based Q&A using FastAPI, PostgreSQL, and a simple Angular UI.
 
 ## Engineering Choices:
 
-1. Use of transformer based spaCy model `en_core_web_trf`
-
-- It is a heavy model which is expensive to load but it gives good Named-Entity Recognition
-- To manage it's expensive loading, I only load it locally when preprocessing of transcripts are being done and not globally.
+1. Use of transformer based spaCy model `en_core_web_trf` for NLP preprocessing
+    - It is a heavy model which is expensive to load but it gives good Named-Entity Recognition
+    - To manage its expensive loading, I only load it locally when preprocessing of transcripts is being done and not globally.
 
 2. Uniqueness of the chunks
 
-- Avoiding chunk duplication was challanging.
-- There were some common chunks like 'Thank you for the call...', or 'Thank you for being present..' etc. which usually came in the first position of the paragraph chunks and were genrating UUID conflict. So to manage it I adopted several deduplication tricks:
-- I made a globally unique chunk hash using its parent transcript_id, its local index and its text,
-- I used Upserting - where I checked if the row exists for a given unique combination of `transcript_id` and `chunk_id` in the TranscriptChunk table.
-- Then I also did deduplication of the chunks and tried to fill only the unseen chunks.
+    - Avoiding chunk duplication was challanging.
+    - There were some common chunks like 'Thank you for the call...', or 'Thank you for being present..' etc. which usually came in the first position of the paragraph chunks and were genrating UUID conflict. So to manage it I adopted several deduplication tricks:
+        - I made a globally unique chunk hash using its parent transcript_id, its local index and its text,
+        - I used Upserting - where I checked if the row exists for a given unique combination of `transcript_id` and `chunk_id` in the TranscriptChunk table.
+        - Then I also did deduplication of the chunks and tried to fill only the unseen chunks.
 
 3. Using 4-bit quantised model`gemma3:4b-it-q4_K_M`:
 
-- To generate augmented answers locally on my laptop, I used a light weight but accurate 4-bit quantised version of gemma3:4b, which which significantly reduces the VRAM requirement in GPU.
+      - To generate augmented answers locally on my laptop, I used a light weight but accurate 4-bit quantised version of gemma3:4b, which which significantly reduces the VRAM requirement in GPU.
 
-4. To send less UUIDs in backend response because frontend can not do anything with it apart from making another backend calls
+4. Trying to send less UUIDs to frontend in backend responsees because frontend can not do anything with them apart from making another backend calls
 
-## Explainations and Descriptions
+## Explanations and Descriptions
 
 ### Transcript Data Source & Ingestion Approach
 
-- User provides data in the `IngestRequest` format which is a free form company query, year, quarter, security type, exchange code (US, UK etc.)
-- Company resolution: This free-form company input is resolved to a ticker using **OpenFIGI** API.
+- User provides data in the `IngestRequest` format, which includes a free form company query, year, quarter, security type (default is 'Common Stock'), exchange code (default is 'US')
+- Company resolution: This free-form company input is resolved to a ticker using OpenFIGI API.
 - Transcript is sourced: Then **DefeatBeta API** retrieves earnings-call transcripts. It sources from database hosted on huggingface https://huggingface.co/datasets/bwzheng2010/yahoo-finance-data
 - **Preprocessing**:
-  - I construct of raw text from the ingested transcripts
+  - I construct raw text from the ingested transcripts
   - Then ORG named-entities are extracted via spaCy (see NLP section).
   - Then some metadata (char/word/sentence counts) and a SHA-256 `content_hash` is computed.
 - **Persistence**:
@@ -61,11 +60,11 @@ Financial transcript ingestion, search, and RAG-based Q&A built on FastAPI, Post
 
 ### RAG Approach & Grounding Strategy
 
-- For Chunking, tThere are two options to choose from:
+- For Chunking, there are two options to choose from:
   - `paragraph`: splits by paragraph and chunks to a max size controlled by environment variable `CHUNK_SIZE`
   - `semantic`: sentence-level similarity chunking with threshold also controlled by env variable `SEMENTIC_THRESH`
-- Then for Embeddings, the chunks converted into embeddings using SentenceTransformer model `EMBEDDING_MODEL`, default 384-dim and stored in pgvector enabled PostgreSQL in the column called `transcript_chunks.embedding`.
-- THen while Retrieving, I retrieve the top K vectors (also an environment variable)
+- Then for Embeddings, the chunks are converted into embeddings using SentenceTransformer model - `all-MiniLM-L6-v2` (env variable `EMBEDDING_MODEL`), it outputs 384-dim vectors and then embeddings are stored in pgvector enabled PostgreSQL in the column called `transcript_chunks.embedding`.
+- Then while Retrieving, I retrieve the top K vectors (also an environment variable)
   - I calculate cosine distance between the query and the stored chunk embeddings.
   - There is also aptional hybrid filter using full tesxt search of PostgreSQL, this uses `USE_HYBRID_FTS` and `FTS_CANDIDATE_LIMIT` variables.
 - Grounding in transcripts:
@@ -83,22 +82,24 @@ Rag based Q&A: `POST /qna/ask`
 
 ## Frontend
 
-Single-page Angular console (`frontend/src/app/app.component.*`) with:
+Single-page Angular console (`frontend/src/app/*`) with:
 
 - **Ingest** form calls `/ingest/ingest-in`
 - **Search** panel calls `/search/query`
 - **Q&A** panel calls `/qna/ask` with inline citation rendering
 
-The frontend allows overriding the API base URL, which must be included in `CORS_ORIGINS`.
-
 ---
 
 ## How to Run Locally
 
-### 1) Start PostgreSQL + pgvector
-
+### 1) Start PostgreSQL and alembic migrations
+From the root do
 ```bash
 docker compose -f docker-compose.trendtrackerhimanshu.yml up -d
+```
+Then run alembic migrations
+```bash
+alembic upgrade head
 ```
 
 This starts:
@@ -118,42 +119,24 @@ We must set:
 ### 3) Backend
 
 - Python version: **3.12.3** (from `.python-version`)
+- Make python virtual env: `python -m venv .venv`
+- Activate the python environment by running: `.venv\Scripts\activate`
 - Install dependencies: `pip install requirements.txt`
 - Download the spaCy model: `python -m spacy download en_core_web_trf`
-- Run Docker container
 - Run API:
   ```
   python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
   ```
 
 ### 4) Frontend
-
+To run the frontend
 ```
 cd frontend
 npm install
 npm start
 ```
 
-Open `http://localhost:4200` and point the API base URL to `http://localhost:8000`.
-
-## Backend Testing Guide (what to implement)
-
-Only the **number and types** of tests/cases to cover core logic:
-
-1. **Ticker resolution (4 cases)**
-   - success, empty match (404), auth error, upstream 4xx/5xx handling
-2. **Ingestion pipeline (6 cases)**
-   - new company, existing company reuse, transcript not found, duplicate transcript (409),
-     empty transcript data, persistence of org counts
-3. **Preprocessing/NLP (4 cases)**
-   - ORG extraction count, metadata computation, content hash stability, normalization
-4. **FTS search (5 cases)**
-   - rank ordering, snippet highlight, filter by company/year/quarter, pagination, no hits
-5. **Chunking (6 cases)**
-   - paragraph chunk sizing, semantic chunk thresholding, chunk hash uniqueness,
-     token/count metadata, empty transcript guard, multi-transcript aggregation
-6. **RAG retrieval + response (6 cases)**
-   - embedding upsert, retrieval top-k size, hybrid FTS gating,
+We'll have frontend at `http://localhost:4200` and FastAPI backend at `http://localhost:8000`.
      min score threshold, “not enough evidence” response, source formatting
 7. **API contracts (3 cases)**
    - /ingest input validation, /search validation, /qna validation
