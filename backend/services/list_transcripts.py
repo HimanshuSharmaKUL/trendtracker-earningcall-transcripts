@@ -12,17 +12,6 @@ from backend.services.ticker_from_company import _api_call, resolve_company_to_t
 
 
 def list_transcript_svc(req: str, session: Session):
-    search_request = {
-        "query": req,
-        "security_type": "Common Stock",
-        "exchange_code" : "US"
-    }
-    # search_response = _api_call("/v3/search", search_request)
-    # data = search_response.get("data") or []
-    # if not data:
-    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No company found for the query.")
-    # best_response_raw = data[0]
-    # ticker = best_response_raw.get('ticker')
     req_query = IngestRequest(
         company_name_query= req,
         security_type="Common Stock",
